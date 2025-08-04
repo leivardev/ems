@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+id                        String        @id @default(cuid())
+username                  String?       @unique
+email                     String?       @unique
+company_name              String?
+accounts                  Account[]
+events                    Event[]
+}
+
+model Account {
+id                        String        @id @default(cuid())
+userId                    String        @unique
+admin                     Boolean       @default(false)
+refresh_token             String?
+access_token              String?
+expires_at                Int?
+token_type                String?
+scope                     String?
+id_token                  String?
+session_state             String?
+refresh_token_expires_in  Int?
+user                      User?         @relation(fields: [userId], references: [id])
+}
+
+model Event {
+id            String        @id @default(cuid())
+created_by    String
+created_at    DateTime      @default(now())
+updated_at    DateTime      @updatedAt
+title         String
+content       String
+event_date    DateTime?
+reoccuring    Boolean       @default(false)
+user          User?         @relation(fields: [created_by], references: [id])
+}
