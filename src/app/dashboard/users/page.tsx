@@ -19,6 +19,7 @@ export default async function UsersPage() {
           <li key={u.id} className="border p-4 rounded">
             <div className="font-medium">{u.name} ({u.email})</div>
             <div className="text-sm text-gray-500">{u.role}</div>
+
             {u.role !== "COMPANY_ADMIN" && (
               <Link
                 href={`/api/admin/users/${u.id}/promote`}
@@ -27,15 +28,23 @@ export default async function UsersPage() {
                 Promote to Admin
               </Link>
             )}
-            <form
-              action={`/api/admin/users/${u.id}/delete`}
-              method="post"
-              className="inline-block ml-4"
-            >
-              <button type="submit" className="text-sm text-red-600 underline">
-                Delete
-              </button>
-            </form>
+
+            {u.id !== user.id && (
+              <form
+                action={`/api/admin/users/${u.id}/delete`}
+                method="post"
+                className="inline-block ml-4"
+              >
+                <button type="submit" className="text-sm text-red-600 underline">
+                  Delete
+                </button>
+              </form>
+            )}
+            {u.id === user.id && (
+              <span className="text-sm text-gray-400 ml-4 italic">
+                (You can't delete yourself)
+              </span>
+            )}
           </li>
         ))}
       </ul>

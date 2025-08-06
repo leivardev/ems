@@ -31,7 +31,7 @@ export default async function NewEventPage() {
 
     revalidatePath("/dashboard/events");
     redirect("/dashboard/events");
-  }
+  };
 
   return (
     <form action={createEvent} className="space-y-4">
@@ -44,4 +44,4 @@ export default async function NewEventPage() {
       <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Create</button>
     </form>
   );
-}
+};

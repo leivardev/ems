@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { User } from "@/generated/prisma";
+import { isEmsAdmin } from "@/lib/auth";
 
 export function Sidebar({ user }: { user: User }) {
   const isAdmin = user.isGlobalAdmin || user.role === "COMPANY_ADMIN";
@@ -12,6 +13,11 @@ export function Sidebar({ user }: { user: User }) {
         <li><Link href="/dashboard/events" className="hover:font-bold">Events</Link></li>
         {isAdmin && <li><Link href="/dashboard/users" className="hover:font-bold">Users</Link></li>}
         <li><Link href="/dashboard/settings" className="hover:font-bold">Settings</Link></li>
+        {isEmsAdmin(user) && (
+          <Link href="/dashboard/requests" className="text-red-500 hover:font-bold">
+            Manage Signup Requests
+          </Link>
+        )}
       </ul>
     </aside>
   );
