@@ -1,6 +1,6 @@
-import prisma from "@/lib/prisma";
 import { getSessionUser, isEmsAdmin } from "@/lib/auth";
-import Link from "next/link";
+import prisma from "@/lib/prisma";
+import EventList from "@/app/components/events/EventList";
 
 export default async function EventsPage() {
   const user = await getSessionUser();
@@ -11,20 +11,11 @@ export default async function EventsPage() {
     orderBy: { startTime: "asc" },
   });
 
-  return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Events</h2>
-      <Link href="/dashboard/events/new" className="text-blue-600 underline">
-        Create New Event
-      </Link>
-      <ul className="mt-4 space-y-2">
-        {events.map(event => (
-          <li key={event.id} className="border p-4 rounded">
-            <div className="font-medium">{event.title}</div>
-            <div className="text-sm text-gray-500">{new Date(event.startTime).toLocaleString()}</div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  const serializedEvents = events.map((event) => ({
+    ...event,
+    startTime: event.startTime.toISOString(),
+    endTime: event.endTime.toISOString(),
+  }));
+
+  return <EventList events={serializedEvents} />;
 }

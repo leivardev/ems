@@ -1,47 +1,110 @@
-import { revalidatePath } from "next/cache";
-import prisma from "@/lib/prisma";
-import { getSessionUser, isCompanyAdmin, isEmsAdmin } from "@/lib/auth";
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function NewEventPage() {
-  const user = await getSessionUser();
-  if (!user || (!isEmsAdmin(user) && !isCompanyAdmin(user))) redirect("/dashboard");
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
-  const safeUser = user!;
+export default function NewEventPage() {
+  const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
+  const [error, setError] = useState("");
 
-  async function createEvent(formData: FormData) {
-    "use server";
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!startTime || !endTime) {
+      setError("Start time and end time are required.");
+      return;
+    }
 
-    const title = formData.get("title") as string;
-    const startTime = new Date(formData.get("startTime") as string);
-    const endTime = new Date(formData.get("endTime") as string);
-    const description = formData.get("description") as string;
-    const location = formData.get("location") as string;
-
-    await prisma.event.create({
-      data: {
+    const res = await fetch("/api/events", {
+      method: "POST",
+      body: JSON.stringify({
         title,
-        startTime,
-        endTime,
         description,
         location,
-        companyId: safeUser.companyId!,
+        startTime,
+        endTime,
+      }),
+      headers: {
+        "Content-Type": "application/json",
       },
     });
 
-    revalidatePath("/dashboard/events");
-    redirect("/dashboard/events");
-  };
+    if (res.ok) {
+      router.push("/dashboard/events");
+    } else {
+      const data = await res.json();
+      setError(data.error || "Something went wrong");
+    }
+  }
 
   return (
-    <form action={createEvent} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-xl font-semibold">Create Event</h2>
-      <input name="title" placeholder="Title" className="border p-2 w-full" required />
-      <textarea name="description" placeholder="Description" className="border p-2 w-full" />
-      <input type="datetime-local" name="startTime" className="border p-2 w-full" required />
-      <input type="datetime-local" name="endTime" className="border p-2 w-full" required />
-      <input name="location" placeholder="Location" className="border p-2 w-full" />
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Create</button>
+
+      {error && <p className="text-red-600">{error}</p>}
+
+      <input
+        name="title"
+        placeholder="Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="border p-2 w-full"
+        required
+      />
+
+      <textarea
+        name="description"
+        placeholder="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="border p-2 w-full"
+      />
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Start Time</label>
+        <DatePicker
+          selected={startTime}
+          onChange={(date) => setStartTime(date)}
+          showTimeSelect
+          timeFormat="HH:mm"
+          timeIntervals={15}
+          dateFormat="dd/MM/yyyy HH:mm"
+          className="border p-2 w-full"
+          placeholderText="DD/MM/YYYY HH:mm"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">End Time</label>
+        <DatePicker
+          selected={endTime}
+          onChange={(date) => setEndTime(date)}
+          showTimeSelect
+          timeFormat="HH:mm"
+          timeIntervals={15}
+          dateFormat="dd/MM/yyyy HH:mm"
+          className="border p-2 w-full"
+          placeholderText="DD/MM/YYYY HH:mm"
+        />
+      </div>
+
+      <input
+        name="location"
+        placeholder="Location"
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        className="border p-2 w-full"
+      />
+
+      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+        Create
+      </button>
     </form>
   );
 };
