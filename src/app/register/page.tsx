@@ -1,22 +1,22 @@
-"use client";
-import Button from "../components/button";
+import { RegisterForm } from "@/app/components/forms/RegisterForm";
+import { RequestSignupKeyForm } from "@/app/components/forms/RequestSignupKeyForm";
 
-export default function SignInPage() {
-
-  const handleRegister = () => {
-    console.log('registered');
-  };
-
+export default function RegisterPage() {
   return (
-    <section className="flex justify-self-center h-screen items-center">
-      <form className="flex flex-col">
-        <input placeholder="username" className="border-2 p-2"></input>
-        <input placeholder="email" className="border-2 p-2"></input>
-        <input placeholder="company" className="border-2 p-2"></input>
-        <input placeholder="password" className="border-2 p-2"></input>
-        <input placeholder="company key" className="border-2 p-2"></input>
-        <section><Button label="Register" onClick={handleRegister} className='w-60 mt-4'/></section>
-      </form>
-    </section>
+    <div className="max-w-4xl mx-auto p-8">
+      <h1 className="text-3xl font-bold mb-6">Register</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <h2 className="text-xl font-semibold mb-2">I have a signup key</h2>
+          <RegisterForm />
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-2">Request access for my company</h2>
+          <RequestSignupKeyForm />
+        </div>
+      </div>
+    </div>
   );
-};
+}
