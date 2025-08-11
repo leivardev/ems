@@ -1,52 +1,63 @@
 "use client";
 
 import { use } from "react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-
-interface Event {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
-  startTime: string;
-  endTime: string;
-}
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import api, { EventDetail, UpdateEventPayload } from "@/lib/axios";
 
 export default function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params); // ✅ Unwrap the promise with `use`
+  const { id } = use(params);
 
   const router = useRouter();
-  const [event, setEvent] = useState<Event | null>(null);
+  const queryClient = useQueryClient();
 
-  // Fetch event data
+  const {
+    data: eventData,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["events", id],
+    queryFn: () => api.getEvent(id),
+    enabled: !!id,
+  });
+
+  const [form, setForm] = useState<EventDetail | null>(null);
+
   useEffect(() => {
-    fetch(`/api/events?id=${id}`)
-      .then((res) => res.json())
-      .then((data) => setEvent(data));
-  }, [id]);
+    if (eventData) setForm(eventData);
+  }, [eventData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!event) return;
-
-    const res = await fetch("/api/events", {
-      method: "PATCH",
-      body: JSON.stringify(event),
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (res.ok) {
+  const { mutate: save, isPending: isSaving } = useMutation({
+    mutationFn: (payload: UpdateEventPayload) => api.updateEvent(payload),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["events", id] });
       router.push("/dashboard/events");
-    } else {
-      const error = await res.json();
-      alert(error.error || "Something went wrong.");
-    }
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form) return;
+
+    const payload: UpdateEventPayload = {
+      id: form.id,
+      title: form.title,
+      description: form.description,
+      location: form.location,
+      startTime: form.startTime,
+      endTime: form.endTime,
+    };
+
+    save(payload);
   };
 
-  if (!event) return <div>Loading...</div>;
+  if (isLoading || !form) return <div>Loading…</div>;
+  if (isError) return <div className="text-red-600">Error: {(error as Error)?.message}</div>;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -54,22 +65,26 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
 
       <input
         type="text"
-        value={event.title}
-        onChange={(e) => setEvent({ ...event, title: e.target.value })}
+        value={form.title}
+        onChange={(e) => setForm({ ...form, title: e.target.value })}
         className="border p-2 w-full"
         required
       />
 
       <textarea
-        value={event.description || ""}
-        onChange={(e) => setEvent({ ...event, description: e.target.value })}
+        value={form.description ?? ""}
+        onChange={(e) => setForm({ ...form, description: e.target.value })}
         className="border p-2 w-full"
       />
 
       <DatePicker
-        selected={new Date(event.startTime)}
+        selected={new Date(form.startTime)}
         onChange={(date) =>
-          setEvent({ ...event, startTime: (date as Date).toISOString() })
+          date &&
+          setForm({
+            ...form,
+            startTime: (date as Date).toISOString(),
+          })
         }
         showTimeSelect
         dateFormat="dd/MM/yyyy HH:mm"
@@ -77,9 +92,13 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
       />
 
       <DatePicker
-        selected={new Date(event.endTime)}
+        selected={new Date(form.endTime)}
         onChange={(date) =>
-          setEvent({ ...event, endTime: (date as Date).toISOString() })
+          date &&
+          setForm({
+            ...form,
+            endTime: (date as Date).toISOString(),
+          })
         }
         showTimeSelect
         dateFormat="dd/MM/yyyy HH:mm"
@@ -88,13 +107,17 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
 
       <input
         type="text"
-        value={event.location || ""}
-        onChange={(e) => setEvent({ ...event, location: e.target.value })}
+        value={form.location ?? ""}
+        onChange={(e) => setForm({ ...form, location: e.target.value })}
         className="border p-2 w-full"
       />
 
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-        Save Changes
+      <button
+        type="submit"
+        disabled={isSaving}
+        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+      >
+        {isSaving ? "Saving…" : "Save Changes"}
       </button>
     </form>
   );

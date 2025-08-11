@@ -4,9 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { CreateEventPayload } from "@/lib/axios";
 
 export default function NewEventPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
@@ -14,34 +18,38 @@ export default function NewEventPage() {
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  const { mutate: createEvent, isPending: isCreating } = useMutation({
+    mutationFn: (payload: CreateEventPayload) => api.createEvent(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      router.push("/dashboard/events");
+    },
+    onError: async (err: any) => {
+      const msg =
+        err?.response?.data?.error ||
+        err?.message ||
+        "Something went wrong creating the event.";
+      setError(msg);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (!startTime || !endTime) {
       setError("Start time and end time are required.");
       return;
-    }
+    };
 
-    const res = await fetch("/api/events", {
-      method: "POST",
-      body: JSON.stringify({
-        title,
-        description,
-        location,
-        startTime,
-        endTime,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
+    createEvent({
+      title,
+      description: description || null,
+      location: location || null,
+      startTime,
+      endTime,
     });
-
-    if (res.ok) {
-      router.push("/dashboard/events");
-    } else {
-      const data = await res.json();
-      setError(data.error || "Something went wrong");
-    }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -102,9 +110,13 @@ export default function NewEventPage() {
         className="border p-2 w-full"
       />
 
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-        Create
+      <button
+        type="submit"
+        disabled={isCreating}
+        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+      >
+        {isCreating ? "Creating…" : "Create"}
       </button>
     </form>
   );
-};
+}

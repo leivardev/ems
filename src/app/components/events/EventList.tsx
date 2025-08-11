@@ -2,37 +2,42 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Button from "../buttons/Button";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/axios";
 
-interface Event {
-  id: string;
-  title: string;
-  startTime: string;
-}
-
-export default function EventList({ events }: { events: Event[] }) {
+export default function EventList() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const handleDelete = async (id: string) => {
+  const { data: events = [], isLoading, isError, error } = useQuery({
+    queryKey: ["events"],
+    queryFn: api.getEvents,
+  });
+
+  const { mutate: deleteEvent, isPending: isDeleting } = useMutation({
+    mutationFn: api.removeEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    },
+  });
+
+  const handleNewEvent = () => router.push("/dashboard/events/new");
+
+  const handleDelete = (id: string) => {
     if (!confirm("Are you sure you want to delete this event?")) return;
-
-    const res = await fetch(`/api/events?id=${id}`, {
-      method: "DELETE",
-    });
-
-    if (res.ok) {
-      router.refresh();
-    } else {
-      alert("Failed to delete the event.");
-    }
+    deleteEvent(id);
   };
+
+  if (isLoading) return <div>Loading events…</div>;
+  if (isError) return <div className="text-red-600">Error: {(error as Error).message}</div>;
 
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Events</h2>
-      <Link href="/dashboard/events/new" className="text-blue-600 underline">
-        Create New Event
-      </Link>
+      <Button label="Create New Event" onClick={handleNewEvent} />
       <ul className="mt-4 space-y-2">
+        {events.length === 0 ? <div>No events.</div> : null}
         {events.map((event) => (
           <li key={event.id} className="border p-4 rounded">
             <div className="font-medium">{event.title}</div>
@@ -48,9 +53,10 @@ export default function EventList({ events }: { events: Event[] }) {
               </Link>
               <button
                 onClick={() => handleDelete(event.id)}
-                className="text-red-600 underline text-sm hover:cursor-pointer"
+                disabled={isDeleting}
+                className="text-red-600 underline text-sm hover:cursor-pointer disabled:opacity-50"
               >
-                Delete
+                {isDeleting ? "Deleting…" : "Delete"}
               </button>
             </div>
           </li>

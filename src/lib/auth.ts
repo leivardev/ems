@@ -1,5 +1,3 @@
-// lib/auth.ts
-
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import prisma from "@/lib/prisma";
@@ -20,7 +18,7 @@ export async function getSessionUser() {
   });
 
   return user;
-}
+};
 
 // EMS superusers — isGlobalAdmin === true
 export function isEmsAdmin(user: any): boolean {
@@ -46,4 +44,4 @@ export function isCompanyUser(user: any): boolean {
 //Check if user belongs to a specific company
 export function isUserInCompany(user: any, companyId: string): boolean {
   return user?.companyId === companyId;
-}
+};

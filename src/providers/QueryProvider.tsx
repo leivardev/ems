@@ -10,6 +10,6 @@ export default function QueryPorivder ({ children }:any) {
     <QueryClientProvider client={queryClient}>
       {children}
     </QueryClientProvider>
-  )
+  );
 
 };

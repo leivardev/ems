@@ -11,4 +11,4 @@ export default async function SettingsPage() {
       <p>Role: {user?.isGlobalAdmin ? "EMS Admin" : user?.role}</p>
     </div>
   );
-}
+};

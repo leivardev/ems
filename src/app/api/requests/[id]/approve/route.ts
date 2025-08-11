@@ -8,7 +8,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const user = await getSessionUser();
   if (!user || !isEmsAdmin(user)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  };
 
   const request = await prisma.signupRequest.findUnique({
     where: { id: requestId },
@@ -16,9 +16,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   if (!request || request.status !== "PENDING") {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
+  };
 
-  // ✅ Check if company already exists to prevent unique constraint error
+  // Check if company already exists to prevent unique constraint error
   const existingCompany = await prisma.company.findUnique({
     where: { name: request.companyName },
   });

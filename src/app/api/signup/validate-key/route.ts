@@ -6,7 +6,7 @@ export async function POST(req: Request) {
 
   if (!key) {
     return NextResponse.json({ error: "Signup key is required" }, { status: 400 });
-  }
+  };
 
   const signupKey = await prisma.signupKey.findUnique({
     where: { key },
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     signupKey.expiresAt < new Date()
   ) {
     return NextResponse.json({ valid: false, message: "Invalid or expired signup key" });
-  }
+  };
 
   return NextResponse.json({
     valid: true,

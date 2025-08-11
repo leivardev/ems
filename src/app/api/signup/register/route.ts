@@ -7,7 +7,7 @@ export async function POST(req: Request) {
 
   if (!name || !email || !password || !key) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-  }
+  };
 
   // Check signup key
   const signupKey = await prisma.signupKey.findUnique({
@@ -20,13 +20,13 @@ export async function POST(req: Request) {
     signupKey.expiresAt < new Date()
   ) {
     return NextResponse.json({ error: "Invalid or expired signup key" }, { status: 400 });
-  }
+  };
 
   // Check if user already exists
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return NextResponse.json({ error: "User with this email already exists" }, { status: 409 });
-  }
+  };
 
   // Create user
   const hashedPassword = await bcrypt.hash(password, 10);

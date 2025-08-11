@@ -10,8 +10,8 @@ declare module "next-auth" {
       role?: UserRole;
       companyId?: string | null;
       isGlobalAdmin?: boolean;
-    };
-  }
+    },
+  };
 
   interface User {
     id: string;
@@ -20,8 +20,8 @@ declare module "next-auth" {
     role: UserRole;
     companyId?: string | null;
     isGlobalAdmin: boolean;
-  }
-}
+  };
+};
 
 declare module "next-auth/jwt" {
   interface JWT {
@@ -29,5 +29,5 @@ declare module "next-auth/jwt" {
     role: string;
     companyId: string | null;
     isGlobalAdmin: boolean;
-  }
-}
+  };
+};

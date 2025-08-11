@@ -12,4 +12,4 @@ export async function POST(_: Request, { params }: { params: { id: string } }) {
   });
 
   return NextResponse.redirect("/dashboard/requests");
-}
+};

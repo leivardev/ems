@@ -13,4 +13,4 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <main className="flex-1 p-6">{children}</main>
     </div>
   );
-}
+};

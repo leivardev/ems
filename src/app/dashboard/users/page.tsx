@@ -1,53 +1,80 @@
-import { getSessionUser, isCompanyAdmin } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import Link from "next/link";
+'use client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from '@/lib/axios';
+import AsyncButton from '@/app/components/buttons/AsyncButton';
 
-export default async function UsersPage() {
-  const user = await getSessionUser();
-  if (!user || !isCompanyAdmin(user)) return null;
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
 
-  const users = await prisma.user.findMany({
-    where: { companyId: user.companyId },
-    orderBy: { name: "asc" },
+export default function UsersPage() {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const res = await axios.getUsers();
+      return res;
+    },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.deleteUser(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: () => {
+      alert('Failed to delete user.');
+    },
+  });
+
+  const handleDelete = (id: string) => {
+    const confirmed = confirm('Are you sure you want to delete this user?');
+    if (confirmed) deleteMutation.mutate(id);
+  };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (!data) return <div>No data</div>;
+
+  const { users, currentUserId } = data;
 
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Company Users</h2>
       <ul className="space-y-2">
-        {users.map(u => (
+        {users.map((u: User) => (
           <li key={u.id} className="border p-4 rounded">
             <div className="font-medium">{u.name} ({u.email})</div>
             <div className="text-sm text-gray-500">{u.role}</div>
 
-            {u.role !== "COMPANY_ADMIN" && (
-              <Link
+            {u.role !== 'COMPANY_ADMIN' && (
+              <a
                 href={`/api/admin/users/${u.id}/promote`}
                 className="text-sm text-blue-600 underline"
               >
                 Promote to Admin
-              </Link>
+              </a>
             )}
 
-            {u.id !== user.id && (
-              <form
-                action={`/api/admin/users/${u.id}/delete`}
-                method="post"
-                className="inline-block ml-4"
-              >
-                <button type="submit" className="text-sm text-red-600 underline">
-                  Delete
-                </button>
-              </form>
+            {u.id !== currentUserId && (
+              <AsyncButton
+                label={deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                className="bg-red-500 hover:bg-red-400 ml-4"
+                onClick={() => handleDelete(u.id)}
+              />
             )}
-            {u.id === user.id && (
-              <span className="text-sm text-gray-400 ml-4 italic">
-                (You can't delete yourself)
-              </span>
+
+            {u.id === currentUserId && (
+              <p className="text-sm text-gray-400 italic">(You can't delete yourself)</p>
             )}
           </li>
         ))}
       </ul>
     </div>
   );
-}
+};
