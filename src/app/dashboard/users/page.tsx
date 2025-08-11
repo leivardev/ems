@@ -1,7 +1,7 @@
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from '@/lib/axios';
-import AsyncButton from '@/app/components/buttons/AsyncButton';
+import Button from '@/app/components/buttons/Button';
 
 interface User {
   id: string;
@@ -62,7 +62,7 @@ export default function UsersPage() {
             )}
 
             {u.id !== currentUserId && (
-              <AsyncButton
+              <Button
                 label={deleteMutation.isPending ? 'Deleting...' : 'Delete'}
                 className="bg-red-500 hover:bg-red-400 ml-4"
                 onClick={() => handleDelete(u.id)}

@@ -5,12 +5,32 @@ const axios = axiosBase.create({
   withCredentials: true,
 });
 
-/* Event types */
+// User types
+interface CreateUserPayload {
+  email: string;
+  password: string;
+  name?: string | null;
+  role?: "COMPANY_USER" | "COMPANY_ADMIN" | "EMS_USER";
+  companyId?: string | null;
+};
+
+interface CreatedUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: "COMPANY_USER" | "COMPANY_ADMIN" | "EMS_USER";
+  isGlobalAdmin: boolean;
+  companyId: string | null;
+  createdAt: string; // serialized from Date
+  updatedAt: string; // serialized from Date
+};
+
+// Event types
 interface EventListItem {
   id: string;
   title: string;
   startTime: string; // ISO string
-}
+};
 
 interface EventDetail {
   id: string;
@@ -19,7 +39,7 @@ interface EventDetail {
   location: string | null;
   startTime: string; // ISO
   endTime: string;   // ISO
-}
+};
 
 interface UpdateEventPayload {
   id: string;
@@ -28,7 +48,7 @@ interface UpdateEventPayload {
   location?: string | null;
   startTime: string | Date;
   endTime: string | Date;
-}
+};
 
 interface CreateEventPayload {
   title: string;
@@ -36,17 +56,22 @@ interface CreateEventPayload {
   location?: string | null;
   startTime: string | Date;
   endTime: string | Date;
-}
+};
 
 
 // Users
 async function deleteUser(id: string) {
   const { data } = await axios.delete("/api/admin/users/", { data: { id } });
   return data;
-}
+};
 
 async function getUsers() {
   const { data } = await axios.get("/api/admin/users/");
+  return data;
+};
+
+async function createUser(payload: CreateUserPayload): Promise<CreatedUser> {
+  const { data } = await axios.post<CreatedUser>('/api/admin/users', payload);
   return data;
 }
 
@@ -54,12 +79,12 @@ async function getUsers() {
 async function getEvents(): Promise<EventListItem[]> {
   const { data } = await axios.get<EventListItem[]>("/api/events");
   return data;
-}
+};
 
 async function getEvent(id: string): Promise<EventDetail> {
   const { data } = await axios.get<EventDetail>("/api/events", { params: { id } });
   return data;
-}
+};
 
 async function removeEvent(id: string): Promise<void> {
   const { data } = await axios.delete("/api/events", { params: { id } });
@@ -92,6 +117,7 @@ const api = {
 // ESM admin
   deleteUser,
   getUsers,
+  createUser,
 // events
   getEvents,
   getEvent,
@@ -101,4 +127,4 @@ const api = {
 };
 
 export default api;
-export type { EventListItem, EventDetail, UpdateEventPayload, CreateEventPayload };
+export type { EventListItem, EventDetail, UpdateEventPayload, CreateEventPayload, CreateUserPayload };
