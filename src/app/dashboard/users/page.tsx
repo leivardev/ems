@@ -2,6 +2,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from '@/lib/axios';
 import Button from '@/app/components/buttons/Button';
+import { useState } from 'react';
+import { CreateNewUserForm } from '@/app/components/forms/CreateNewUserForm';
 
 interface User {
   id: string;
@@ -12,6 +14,7 @@ interface User {
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
+  const [createMode, setCreateMode] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['users'],
@@ -38,6 +41,14 @@ export default function UsersPage() {
     if (confirmed) deleteMutation.mutate(id);
   };
 
+  const toggleCreate = () => {
+    if(createMode === true){
+      setCreateMode(false);
+    } else {
+      setCreateMode(true);
+    };
+  };
+
   if (isLoading) return <div>Loading...</div>;
   if (!data) return <div>No data</div>;
 
@@ -46,7 +57,13 @@ export default function UsersPage() {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Company Users</h2>
-      <ul className="space-y-2">
+      {createMode === false ?
+      <Button label='Create new user' type='button' onClick={toggleCreate} />
+      :null}
+      {createMode === true ?
+      <section><Button label='Cancel user registration' type='button' onClick={toggleCreate} className='bg-red-500 hover:bg-red-400'/><CreateNewUserForm /></section>
+      :null}
+      <ul className="space-y-2 mt-4">
         {users.map((u: User) => (
           <li key={u.id} className="border p-4 rounded">
             <div className="font-medium">{u.name} ({u.email})</div>
