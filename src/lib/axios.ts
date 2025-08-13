@@ -10,7 +10,7 @@ interface CreateUserPayload {
   email: string;
   password: string;
   name?: string | null;
-  role?: "COMPANY_USER" | "COMPANY_ADMIN" | "EMS_USER";
+  role?: string;
   companyId?: string | null;
 };
 
@@ -70,8 +70,8 @@ async function getUsers() {
   return data;
 };
 
-async function createUser(payload: CreateUserPayload): Promise<CreatedUser> {
-  const { data } = await axios.post<CreatedUser>('/api/admin/users', payload);
+async function createUser(body: CreateUserPayload): Promise<CreatedUser> {
+  const { data } = await axios.post<CreatedUser>('/api/admin/users', body);
   return data;
 }
 

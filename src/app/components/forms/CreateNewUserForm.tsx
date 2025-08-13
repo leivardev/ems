@@ -3,16 +3,19 @@ import { useState } from "react";
 import Button from "../buttons/Button";
 import { isEmsAdmin, isCompanyAdmin } from "@/lib/auth";
 import { useSession } from "next-auth/react";
+import api from "@/lib/axios";
 
 export function CreateNewUserForm() {
 
-  const user = useSession();
+  const user = useSession().data?.user;
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     role: "",
+    companyId: user?.companyId,
+    isGlobalAdmin: false
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,13 +23,14 @@ export function CreateNewUserForm() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    null;
+    api.createUser(formData);
   };
 
   if(isEmsAdmin(user)){
     setFormData({
       ...formData,
       role: 'EMS_USER',
+      isGlobalAdmin: true,
     });
   };
 
@@ -37,7 +41,7 @@ export function CreateNewUserForm() {
       <input type="password" name="password" placeholder="Password" onChange={handleChange} className="border p-2 w-full" required />
       {isCompanyAdmin(user) ? 
         <select>
-          <option selected>COMPANY_USER</option>
+          <option defaultValue={"COMPANY_USER"}>COMPANY_USER</option>
           <option>COMPANY_ADMIN</option>
         </select> 
         : <p>{isCompanyAdmin(user)}</p>
