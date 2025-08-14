@@ -1,3 +1,4 @@
+import Button from "@/app/components/buttons/Button";
 import { getSessionUser, isEmsAdmin } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -24,14 +25,10 @@ export default async function SignupRequestsPage() {
             {req.message && <p className="mt-1 text-sm">{req.message}</p>}
             <div className="mt-2 flex gap-4">
               <form action={`/api/requests/${req.id}/approve`} method="post">
-                <button className="bg-green-600 text-white px-3 py-1 rounded">
-                  Approve
-                </button>
+                <Button type="submit" label="Approve" className="bg-green-500 hover:bg-green-400" />
               </form>
               <form action={`/api/requests/${req.id}/reject`} method="post">
-                <button className="bg-red-600 text-white px-3 py-1 rounded">
-                  Reject
-                </button>
+                <Button type="submit" label="Reject" className="bg-red-500 hover:bg-red-400"/>
               </form>
             </div>
           </li>

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Button from "../buttons/Button";
 
 export function RequestSignupKeyForm() {
   const [formData, setFormData] = useState({
@@ -30,7 +31,7 @@ export function RequestSignupKeyForm() {
       <input type="email" name="contactEmail" placeholder="Contact Email" onChange={handleChange} className="border p-2 w-full" required />
       <input name="contactName" placeholder="Your Name" onChange={handleChange} className="border p-2 w-full" required />
       <textarea name="message" placeholder="Message (optional)" onChange={handleChange} className="border p-2 w-full" />
-      <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">Submit Request</button>
+      <Button type="submit" className="" label="Submit Request" />
     </form>
   );
 }
