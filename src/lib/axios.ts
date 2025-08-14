@@ -70,10 +70,15 @@ async function getUsers() {
   return data;
 };
 
-async function createUser(body: CreateUserPayload): Promise<CreatedUser> {
-  const { data } = await axios.post<CreatedUser>('/api/admin/users', body);
+async function createUser(formData: CreateUserPayload): Promise<CreatedUser> {
+  const { data } = await axios.post<CreatedUser>('/api/admin/users', formData);
   return data;
 }
+
+async function promoteUser(id: string) {
+  const { data } = await axios.patch("/api/admin/users/", { id });
+  return data;
+};
 
 // Events
 async function getEvents(): Promise<EventListItem[]> {
@@ -118,6 +123,7 @@ const api = {
   deleteUser,
   getUsers,
   createUser,
+  promoteUser,
 // events
   getEvents,
   getEvent,

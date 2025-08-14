@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSessionUser, isCompanyAdmin, isEmsAdmin } from "@/lib/auth";
 import { z } from "zod";
 import { hash } from "bcryptjs";
+import { UserRole } from "@/generated/prisma";
 
 const CreateUserSchema = z.object({
   email: z.string().email(),
@@ -54,6 +55,60 @@ export async function DELETE(req: Request) {
 
   return NextResponse.json({ success: true }, {status: 200});
 };
+
+export async function PATCH(req: Request) {
+  const user = await getSessionUser();
+  const targetData = await req.json();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Allow both company admins and EMS admins
+  if (!isCompanyAdmin(user) && !isEmsAdmin(user)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (!targetData.id) {
+    return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  }
+
+  if (user.id === targetData.id) {
+    return NextResponse.json({ error: "Cannot promote yourself" }, { status: 400 });
+  }
+
+  const target: any = await prisma.user.findUnique({
+    where: { id: targetData.id },
+    select: { id: true, role: true, isGlobalAdmin: true, companyId: true },
+  });
+
+  if (!target) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  };
+
+  // Company admins can only promote users in the same company
+  if (isCompanyAdmin(user)) {
+    if (!user.companyId || target.companyId !== user.companyId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  };
+
+  // Do not allow promoting EMS/global admins
+  if (target.isGlobalAdmin || target.role === UserRole.EMS_USER) {
+    return NextResponse.json({ error: "Cannot modify EMS users" }, { status: 400 });
+  };
+
+  // If already admin
+  if (target.role === UserRole.COMPANY_ADMIN) {
+    return NextResponse.json({ success: true, message: "Already admin" }, { status: 200 });
+  };
+
+  await prisma.user.update({
+    where: { id: target.id },
+    data: { role: UserRole.COMPANY_ADMIN },
+  });
+
+  return NextResponse.json({ success: true }, { status: 200 });
+}
 
 export async function POST(req: Request) {
 

@@ -5,6 +5,7 @@ type ButtonProps = {
   className?: string;
   onClick?: () => void | Promise<void> | undefined;
   type?: 'submit' | 'reset' | 'button' | undefined;
+  disabled?: boolean;
 };
 
 
