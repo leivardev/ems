@@ -6,6 +6,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api, { CreateEventPayload } from "@/lib/axios";
+import Button from "@/app/components/buttons/Button";
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -109,14 +110,18 @@ export default function NewEventPage() {
         onChange={(e) => setLocation(e.target.value)}
         className="border p-2 w-full"
       />
-
-      <button
+      {isCreating ? 
+        <Button
+        type="button"
+        label="Creating..."
+        className="bg-green-500"
+        /> 
+        : 
+        <Button 
         type="submit"
-        disabled={isCreating}
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-      >
-        {isCreating ? "Creating…" : "Create"}
-      </button>
+        label="Create"
+        />
+      }
     </form>
   );
 }

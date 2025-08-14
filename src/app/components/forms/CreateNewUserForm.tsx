@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Button from "../buttons/Button";
 import api, { CreateUserPayload } from "@/lib/axios";
@@ -9,43 +9,25 @@ export function CreateNewUserForm() {
   const { data: session } = useSession();
   const currentUser = session?.user;
 
-  // Derive roles on the client from session fields
   const isEMS =
     currentUser?.isGlobalAdmin === true || currentUser?.role === "EMS_USER";
   const isCompanyAdmin = currentUser?.role === "COMPANY_ADMIN";
 
-  const [formData, setFormData] = useState<CreateUserPayload>({
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    password: string;
+    role: "COMPANY_USER" | "COMPANY_ADMIN" | "EMS_USER";
+    companyId?: string | null; // only used by EMS when creating company users
+  }>({
     name: "",
     email: "",
     password: "",
-    role: isEMS ? "EMS_USER" : "COMPANY_USER", // sensible default
-    companyId: null, // will be set below if company admin
+    role: isEMS ? "EMS_USER" : "COMPANY_USER",
+    companyId: null,
   });
 
   const [error, setError] = useState<string>("");
-
-  // When session/user loads, set companyId for company admins
-  useEffect(() => {
-    if (isCompanyAdmin && currentUser?.companyId) {
-      setFormData((prev) => ({
-        ...prev,
-        companyId: currentUser.companyId!,
-        // ensure role is a company role by default
-        role:
-          prev.role === "EMS_USER" || !prev.role
-            ? "COMPANY_USER"
-            : (prev.role as CreateUserPayload["role"]),
-      }));
-    }
-    if (isEMS) {
-      // EMS users can default to EMS_USER; keep companyId null unless chosen
-      setFormData((prev) => ({
-        ...prev,
-        companyId: prev.companyId ?? null,
-        role: prev.role || "EMS_USER",
-      }));
-    }
-  }, [isCompanyAdmin, isEMS, currentUser?.companyId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -53,8 +35,8 @@ export function CreateNewUserForm() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      // normalize empty strings to undefined/null only where it makes sense
-      [name]: value,
+      [name]:
+        name === "companyId" && value.trim() === "" ? null : (value as any),
     }));
   };
 
@@ -62,38 +44,41 @@ export function CreateNewUserForm() {
     e.preventDefault();
     setError("");
 
-    // Basic client-side checks
     if (!formData.email || !formData.password) {
       setError("Email and password are required.");
       return;
-    }
+    };
 
-    // For EMS creating company users/admins, require companyId
+    // Build payload respecting the visibility rules:
+    const payload: CreateUserPayload = {
+      email: formData.email,
+      password: formData.password,
+      name: formData.name || null,
+      role: formData.role,
+    };
+
+    // Only EMS may pass companyId, and only when creating a company role.
     if (
       isEMS &&
-      (formData.role === "COMPANY_USER" || formData.role === "COMPANY_ADMIN") &&
-      !formData.companyId
-    ) {
-      setError("Please select a company for the new user.");
-      return;
-    }
+      (formData.role === "COMPANY_USER" || formData.role === "COMPANY_ADMIN")
+    ){
+      if (!formData.companyId) {
+        setError("Please provide a company ID for the new company user.");
+        return;
+      };
+      payload.companyId = formData.companyId;
+    };
+
+    // Company admins never send companyId; server infers it from the requester.
 
     try {
-      await api.createUser({
-        email: formData.email,
-        password: formData.password,
-        name: formData.name || null,
-        role: formData.role as CreateUserPayload["role"],
-        companyId:
-          formData.role === "EMS_USER" ? null : (formData.companyId ?? null),
-      });
-      // Clear form or show success UI
+      await api.createUser(payload);
       setFormData({
         name: "",
         email: "",
         password: "",
         role: isEMS ? "EMS_USER" : "COMPANY_USER",
-        companyId: isCompanyAdmin ? currentUser?.companyId ?? null : null,
+        companyId: null,
       });
       alert("User created successfully.");
     } catch (err: any) {
@@ -102,7 +87,11 @@ export function CreateNewUserForm() {
         err?.message ||
         "Failed to create user.";
       setError(msg);
-    }
+    };
+  };
+
+  if (!isEMS && !isCompanyAdmin) {
+    return <p className="text-red-600">You are not authorized to create users.</p>;
   };
 
   return (
@@ -112,7 +101,7 @@ export function CreateNewUserForm() {
       <input
         name="name"
         placeholder="Name"
-        value={formData.name ?? ""}
+        value={formData.name}
         onChange={handleChange}
         className="border p-2 w-full"
       />
@@ -137,13 +126,12 @@ export function CreateNewUserForm() {
         required
       />
 
-      {/* Role selection */}
+      <label className="block text-sm font-medium">Role</label>
       {isEMS ? (
         <>
-          <label className="block text-sm font-medium">Role</label>
           <select
             name="role"
-            value={formData.role || "EMS_USER"}
+            value={formData.role}
             onChange={handleChange}
             className="border p-2 w-60"
           >
@@ -152,8 +140,6 @@ export function CreateNewUserForm() {
             <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
           </select>
 
-          {/* For EMS choosing a company role, show a companyId input/select.
-              Replace this input with a real company selector in your UI. */}
           {(formData.role === "COMPANY_USER" ||
             formData.role === "COMPANY_ADMIN") && (
             <input
@@ -166,34 +152,22 @@ export function CreateNewUserForm() {
             />
           )}
         </>
-      ) : isCompanyAdmin ? (
-        <>
-          <label className="block text-sm font-medium">Role</label>
-          <select
-            name="role"
-            value={
-              formData.role === "COMPANY_ADMIN" ? "COMPANY_ADMIN" : "COMPANY_USER"
-            }
-            onChange={handleChange}
-            className="border p-2 w-60"
-          >
-            <option value="COMPANY_USER">COMPANY_USER</option>
-            <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
-          </select>
-
-          {/* Company admins are locked to their companyId */}
-          <input
-            name="companyId"
-            value={currentUser?.companyId ?? ""}
-            readOnly
-            className="border p-2 w-full opacity-70"
-          />
-        </>
       ) : (
-        <p className="text-red-600">You are not authorized to create users.</p>
+        // Company admin: only company roles, no companyId field at all
+        <select
+          name="role"
+          value={
+            formData.role === "COMPANY_ADMIN" ? "COMPANY_ADMIN" : "COMPANY_USER"
+          }
+          onChange={handleChange}
+          className="border p-2 w-60"
+        >
+          <option value="COMPANY_USER">COMPANY_USER</option>
+          <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
+        </select>
       )}
 
       <Button type="submit" label="Register" className="mt-2" />
     </form>
   );
-}
+};

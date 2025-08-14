@@ -7,6 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api, { EventDetail, UpdateEventPayload } from "@/lib/axios";
+import Button from "@/app/components/buttons/Button";
 
 export default function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -111,14 +112,27 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
         onChange={(e) => setForm({ ...form, location: e.target.value })}
         className="border p-2 w-full"
       />
-
-      <button
-        type="submit"
-        disabled={isSaving}
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-      >
-        {isSaving ? "Saving…" : "Save Changes"}
-      </button>
+      {isSaving ? 
+        <section className="isSavingButtons">
+          <Button 
+            label="Saving Changes..."
+            className="bg-green-500 mt-2"
+          />
+        </section> 
+        :
+        <section className="SaveButtons">
+          <Button
+            type="submit"
+            label="Save Changes"
+            className="mt-2"
+          />
+          <Button
+            type="button"
+            label="Cancel Changes"
+            className="bg-red-500 hover:bg-red-400 m-2"
+            onClick={() => router.push('/dashboard/events/')}
+          />
+        </section>}
     </form>
   );
 }

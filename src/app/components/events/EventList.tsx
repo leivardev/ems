@@ -15,7 +15,7 @@ export default function EventList() {
     queryFn: api.getEvents,
   });
 
-  const { mutate: deleteEvent, isPending: isDeleting } = useMutation({
+  const { mutate: deleteEvent } = useMutation({
     mutationFn: api.removeEvent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -45,19 +45,16 @@ export default function EventList() {
               {new Date(event.startTime).toLocaleString()}
             </div>
             <div className="mt-2 flex gap-4 items-center">
-              <Link
-                href={`/dashboard/events/${event.id}`}
-                className="text-blue-600 underline text-sm"
-              >
-                Manage
-              </Link>
-              <button
+              <Button
+                label="Manage"
+                onClick={() => router.push(`/dashboard/events/${event.id}`)}
+                className=""
+              />
+              <Button
                 onClick={() => handleDelete(event.id)}
-                disabled={isDeleting}
-                className="text-red-600 underline text-sm hover:cursor-pointer disabled:opacity-50"
-              >
-                {isDeleting ? "Deleting…" : "Delete"}
-              </button>
+                label='Delete'
+                className="bg-red-500 hover:bg-red-400"
+              />
             </div>
           </li>
         ))}
