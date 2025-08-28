@@ -1,6 +1,7 @@
 "use client";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import Button from "../buttons/Button";
 
 export function SigninForm() {
   const [email, setEmail] = useState("");
@@ -33,9 +34,7 @@ export function SigninForm() {
         className="border p-2 w-full"
         required
       />
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-        Sign In
-      </button>
+      <Button type="submit" className="w-40 mr-2 bg-" label="Sign In" />
     </form>
   );
 }
